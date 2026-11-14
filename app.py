@@ -2,6 +2,7 @@
 import streamlit as st
 from datetime import datetime, date, time
 from pawpal_system import Pet, Task, Scheduler
+from ai_advisor import build_safe_schedule, validate_schedule, explain_with_gemma
 from storage import save_data, load_data
 
 st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="centered")
@@ -99,7 +100,11 @@ if owner.pets:
         with col4:
             due_date = st.date_input("Due date", value=date.today())
         with col5:
-            due_time = st.time_input("Due time", value=time(8, 0))
+            due_time = st.time_input(
+                "Due time (24-hour format: 18:00 = 6:00 PM)",
+                value=time(8, 0),
+                step=60
+            )
 
         frequency = st.selectbox(
             "Frequency", ["once", "daily", "weekly"]
@@ -242,3 +247,62 @@ if pending_tasks:
             st.success("Task completed!")
 
         st.rerun()
+
+# Project 4: AI Scheduling Advisor
+st.divider()
+st.subheader("AI Scheduling Advisor")
+st.caption(
+    "Python calculates and validates schedules. "
+    "Google Gemma 3 explains recommendations through Ollama."
+)
+
+if st.button("Generate AI-Assisted Schedule"):
+    if not owner.get_all_tasks():
+        st.warning("Add at least one task first.")
+    else:
+        try:
+            proposed = build_safe_schedule(owner)
+            valid, message = validate_schedule(proposed)
+
+            st.markdown("#### Proposed Schedule")
+
+            rows = []
+            for entry in proposed:
+                rows.append({
+                    "Pet": entry["pet"],
+                    "Task": entry["task"],
+                    "Start": entry["start"],
+                    "End": entry["end"],
+                    "Duration": entry["duration_minutes"],
+                    "Status": entry["status"]
+                })
+
+            st.dataframe(rows, use_container_width=True)
+
+            if valid:
+                st.success(f"Validation passed: {message}")
+                st.markdown("#### Gemma AI Explanation")
+                st.write(explain_with_gemma(proposed))
+                st.caption(
+                    "AI explanations may contain errors. "
+                    "The validated schedule above is authoritative."
+                )
+            else:
+                st.error(f"Validation failed: {message}")
+                st.warning(
+                    "AI explanation blocked. Resolve scheduling "
+                    "conflicts before proceeding."
+                )
+
+            if any(
+                entry["status"] == "REQUIRES HUMAN REVIEW"
+                for entry in proposed
+            ):
+                st.warning(
+                    "Protected tasks require human review. "
+                    "Do not change medication timing without "
+                    "appropriate veterinary guidance."
+                )
+
+        except (ValueError, KeyError, TypeError) as exc:
+            st.error(f"Unable to generate schedule: {exc}")
