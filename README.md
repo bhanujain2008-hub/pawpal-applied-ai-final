@@ -1,428 +1,372 @@
-Yes. Below is the complete, corrected `README.md` in one copyable block. It preserves CodePath's original sections and incorporates your completed core and stretch features.
 
-Copy everything inside the block, replace the contents of `README.md` in VS Code, and save with Ctrl+S.
+# PawPal+ — AI110 Applied AI Final Project
 
-````
+**Project:** AI-Assisted Pet Care Scheduling  
+**Course:** CodePath AI110  
+**AI Model:** Google Gemma 3 1B, running locally through Ollama  
+**Repository:** https://github.com/bhanujain2008-hub/pawpal-applied-ai-final
 
-# PawPal+ (Module 2 Project)
+## 1. Project Overview
 
-You are building **PawPal+**, a Streamlit app that helps a pet owner plan care tasks for their pets.
+PawPal+ is a Streamlit application that helps pet owners organize care tasks for multiple pets.
 
-## Scenario
+The original Module 2 project provided task management, scheduling, conflict detection, recurrence, and JSON persistence.
 
-A busy pet owner needs help staying consistent with pet care. They want an assistant that can:
+For the AI110 final project, PawPal+ was extended with an **AI Scheduling Advisor** that combines deterministic Python scheduling, safety validation, and a locally hosted language model.
 
-- Track pet care tasks (walks, feeding, medications, enrichment, grooming, etc.).
-- Consider constraints such as time, priority, task duration, and owner preferences.
-- Produce a daily plan and explain scheduling conflicts.
+**Design principle:** Python determines the schedule. Gemma explains it. AI-generated explanations never modify saved tasks.
 
-The project follows a design-first approach: create UML diagrams, implement the Python classes and scheduling algorithms, test the logic, and connect it to the Streamlit interface.
+## 2. Original PawPal+ Features
 
-## What you will build
+- Manage an owner and multiple pets.
+- Add tasks with descriptions, dates, times, durations, priorities, and recurrence frequencies.
+- Sort tasks by time or priority.
+- Filter by pet or completion status.
+- Detect overlapping task intervals.
+- Mark tasks completed.
+- Generate subsequent daily or weekly recurring tasks.
+- Save and restore data using local JSON storage.
+- Display schedules and warnings in Streamlit.
 
-The completed PawPal+ application can:
+### Core Classes
 
-- Store owner information and manage multiple pets.
-- Add care tasks with descriptions, due dates, times, durations, frequencies, and priorities.
-- Mark tasks as completed.
-- Sort tasks chronologically or by priority.
-- Filter tasks by pet or completion status.
-- Detect overlapping task intervals across multiple pets.
-- Generate recurring daily or weekly tasks.
-- Save and restore application data using JSON.
-- Display schedules and conflict warnings in Streamlit.
-- Verify scheduling behavior through automated pytest tests.
+| Class | Responsibility |
+|---|---|
+| `Owner` | Manages pets and their tasks. |
+| `Pet` | Stores pet details and care tasks. |
+| `Task` | Stores task descriptions, times, durations, priorities, recurrence, and completion. |
+| `Scheduler` | Sorts, filters, detects conflicts, and handles recurrence. |
 
-## Getting started
+Original UML diagrams are preserved in `diagrams/`.
 
-### Setup
+## 3. New Applied AI Feature
 
-Create a Python virtual environment:
+The **AI Scheduling Advisor** integrates Google Gemma 3 1B with the existing PawPal+ application.
+
+### Processing Workflow
+
+1. The owner enters pet-care tasks through Streamlit.
+2. Python retrieves incomplete tasks and orders them by their original scheduled times.
+3. Protected tasks, including medication and injections, retain their original times.
+4. Flexible tasks are moved when necessary to avoid protected intervals and other scheduled flexible tasks.
+5. Python validates task durations, protected times, and overlaps.
+6. Invalid schedules block AI explanation.
+7. Valid schedules are sent to Gemma through the local Ollama API for an advisory explanation.
+8. A basic phrase-based safeguard rejects certain unsupported AI claims.
+9. Streamlit displays the proposed schedule, validation results, and any available explanation.
+
+The advisor **does not automatically overwrite the owner's saved tasks**.
+
+### Architecture
+
+Source diagram: `diagrams/architecture.mmd`
+
+```mermaid
+flowchart TD
+    A["Pet Owner"] --> B["Streamlit Interface"]
+    B --> C["Pet and Task Data"]
+    C <--> D["JSON Storage"]
+    B --> E["AI Scheduling Advisor"]
+    E --> F["Python Scheduler"]
+    F --> G["Protected Task Checks"]
+    G --> H["Schedule Validation"]
+    H -->|Valid| I["Ollama API"]
+    I --> J["Google Gemma 3 1B"]
+    J --> K["AI Explanation Safeguard"]
+    K --> B
+    H -->|Invalid| L["Block AI Explanation"]
+    L --> B
+```
+
+## 4. Installation and Setup
+
+### Requirements
+
+- Python 3
+- Windows PowerShell or another supported terminal
+- Ollama
+- Google Gemma 3 1B model
+- Python dependencies from `requirements.txt`
+
+### Install Python Dependencies
 
 ```powershell
 python -m venv .venv
-```
-
-Activate the virtual environment on Windows:
-
-```powershell
 .venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 ```
 
-Install the project dependencies:
+### Install and Prepare Ollama
+
+Install Ollama from https://ollama.com.
+
+Download the model:
 
 ```powershell
-pip install -r requirements.txt
+ollama pull gemma3:1b
 ```
 
-Run the Streamlit application:
+Ensure Ollama is running locally and serving requests at:
+
+`http://localhost:11434`
+
+### Run PawPal+
 
 ```powershell
 python -m streamlit run app.py
 ```
 
-Open the local URL displayed in the terminal, usually:
+Open the URL displayed by Streamlit, usually:
 
-http://localhost:8501
+`http://localhost:8501`
 
-If port 8501 is already occupied, Streamlit may use another port, such as 8502.
-
-To run the command-line demonstration:
+To run the original command-line demonstration:
 
 ```powershell
 python main.py
 ```
 
-To run the automated tests:
+### Run Tests
 
 ```powershell
-python -m pytest
+python -m pytest -q
 ```
 
-### Suggested workflow
+**Latest verified result: 17 passed.**
 
-1. Read the scenario carefully and identify requirements and edge cases.
-2. Draft a UML diagram showing classes, attributes, methods, and relationships.
-3. Convert the UML design into Python classes.
-4. Implement scheduling logic in small increments.
-5. Add tests to verify important scheduling behaviors.
-6. Connect the Python backend to the Streamlit UI in `app.py`.
-7. Refine the UML diagram to reflect the final implementation.
-8. Document implementation decisions, AI assistance, and verification results.
+The Python scheduling and validation features remain usable without Ollama. AI explanations require Ollama and the downloaded Gemma model.
 
-## System Design
+## 5. Actual Input/Output Examples
 
-PawPal+ uses four main Python classes:
+These examples are drawn from tests and observed application behavior.
 
-| Class | Responsibility |
-|---|---|
-| `Owner` | Stores owner information and manages multiple pets. |
-| `Pet` | Stores pet information and associated care tasks. |
-| `Task` | Represents a care activity, including its due time, duration, frequency, priority, and completion status. |
-| `Scheduler` | Sorts, filters, checks conflicts, and handles recurring tasks. |
+### Example 1 — Two Overlapping Walks
 
-The relationships are:
+**Input:**
 
-- One owner can have multiple pets.
-- One pet can have multiple tasks.
-- The scheduler accesses the owner's tasks to produce schedules across pets.
-
-### UML Diagrams
-
-The project includes:
-
-- `diagrams/uml_draft.mmd` — Initial design.
-- `diagrams/uml_final.mmd` — Final design reflecting the implemented classes and task duration.
-- `diagrams/uml.mmd` — Additional UML diagram.
-
-The final UML diagram includes the `duration_minutes` attribute in the `Task` class.
-
-## 🖥️ Sample Output
-
-The following is an example from the earlier command-line demonstration using `python main.py`:
-
-```text
-TODAY'S SCHEDULE (SORTED BY TIME)
--------------------------------------------------------
-2026-10-18 07:00 | Luna   | Breakfast       | High
-2026-10-18 08:00 | Buddy  | Morning walk    | High
-2026-10-18 09:00 | Buddy  | Medication      | High
-2026-10-18 09:00 | Luna   | Grooming        | Low
-
-HIGH-PRIORITY TASKS FIRST
--------------------------------------------------------
-2026-10-18 07:00 | Luna   | Breakfast       | High
-2026-10-18 08:00 | Buddy  | Morning walk    | High
-2026-10-18 09:00 | Buddy  | Medication      | High
-2026-10-18 09:00 | Luna   | Grooming        | Low
-
-BUDDY'S TASKS
--------------------------------------------------------
-2026-10-18 08:00 | Buddy  | Morning walk    | High
-2026-10-18 09:00 | Buddy  | Medication      | High
-
-SCHEDULING CONFLICTS
-WARNING: Buddy and Luna have tasks at 09:00
-
-Recurring task created: Morning walk on 2026-10-19
-```
-
-This output illustrates the original command-line demonstration. The updated scheduling implementation additionally supports task durations and detects overlapping time intervals.
-
-## 🧪 Testing PawPal+
-
-Run the full test suite:
-
-```powershell
-python -m pytest
-```
-
-### Verified Test Results
-
-The final test run produced:
-
-```text
-====================== test session starts ======================
-platform win32 -- Python 3.13.15, pytest-9.1.1, pluggy-1.7.0
-rootdir: C:\Users\jainbc\Documents\AI110\ai110-module2show-pawpal-starter
-plugins: anyio-4.15.1
-collected 11 items
-
-tests\test_pawpal.py ...........                           [100%]
-
-====================== 11 passed in 0.18s =======================
-```
-
-### Behaviors Tested
-
-The automated tests cover:
-
-- Task completion.
-- Adding tasks to pets.
-- Chronological sorting across multiple pets.
-- Filtering tasks.
-- Detecting overlapping task intervals.
-- Recognizing non-overlapping intervals, including tasks meeting exactly at an endpoint.
-- Preserving task durations.
-- Saving and loading task data.
-- Loading older JSON records without a duration field.
-- Daily task recurrence.
-- Priority-based scheduling.
-
-**Test result: 11 passed, 0 failed.**
-
-**Confidence level: 4/5.** Automated tests passed, and key scheduling and persistence features were verified manually. Additional edge-case and usability testing could further improve confidence.
-
-## 📐 Smarter Scheduling
-
-| Feature | Method(s) | Notes |
+| Task | Original Time | Duration |
 |---|---|---|
-| Task sorting | `Scheduler.sort_by_time()` | Sorts tasks chronologically across pets. |
-| Priority scheduling | `Scheduler.sort_by_priority()` | Orders tasks by High, Medium, and Low priority, then by time. |
-| Filtering | `Scheduler.filter_tasks()` | Filters tasks by pet name or completion status. |
-| Conflict handling | `Scheduler.detect_conflicts()` | Detects overlapping task intervals across pets. |
-| Recurring tasks | `Scheduler.handle_recurrence()` | Creates the next daily or weekly occurrence after a recurring task is completed. |
+| Morning walk | 8:00 AM | 20 minutes |
+| Second walk | 8:00 AM | 20 minutes |
 
-The scheduler retrieves tasks through `Owner.get_all_tasks()`, allowing scheduling algorithms to operate across multiple pets.
+**Python-generated output:**
 
-### Duration-Aware Conflict Detection
+| Task | Proposed Start | End |
+|---|---|---|
+| Morning walk | 8:00 AM | 8:20 AM |
+| Second walk | 8:20 AM | 8:40 AM |
 
-Each task has a `duration_minutes` attribute, with a default value of 20 minutes.
+**Result:** Validation passed. The tasks do not overlap, and their durations are preserved.
 
-A task occupies the interval between its scheduled start time and its calculated end time.
+### Example 2 — Walk Overlapping Medication
 
-Two tasks conflict when their time intervals overlap.
+**Input:**
 
-For example:
+| Task | Original Time | Duration |
+|---|---|---|
+| Walk | 8:00 AM | 20 minutes |
+| Medication | 8:10 AM | 10 minutes |
 
-| Task | Start | Duration | End |
+**Python-generated output:**
+
+| Task | Proposed Start | End | Status |
 |---|---|---|---|
-| Feeding | 10:00 AM | 30 minutes | 10:30 AM |
-| Medication | 10:15 AM | 20 minutes | 10:35 AM |
+| Medication | 8:10 AM | 8:20 AM | Requires human review |
+| Walk | 8:20 AM | 8:40 AM | Proposed |
 
-These tasks conflict because they overlap between 10:15 AM and 10:30 AM.
+**Result:** Validation passed. The medication time remained unchanged, and the walk was moved.
 
-Tasks that meet exactly at an endpoint do not conflict. For example, a task ending at 10:30 AM does not conflict with another task starting at 10:30 AM.
+Medication timing still requires appropriate human review.
 
-### Priority-Based Scheduling
+### Example 3 — Conflicting Protected Tasks
 
-Tasks can be assigned High, Medium, or Low priority.
+**Input:**
 
-The scheduler can sort tasks by priority and use scheduled time to order tasks within the same priority level.
+| Task | Original Time | Duration |
+|---|---|---|
+| Medication | 8:00 AM | 20 minutes |
+| Insulin injection | 8:10 AM | 10 minutes |
 
-This helps owners identify important tasks while still considering their scheduled times.
-
-### Recurring Tasks
-
-PawPal+ supports daily and weekly recurring tasks.
-
-When a recurring task is completed, the scheduler can generate its next occurrence.
-
-The new occurrence retains the task's duration.
-
-## JSON Persistence
-
-PawPal+ uses `storage.py` to save and restore application data.
-
-The saved information includes:
-
-- Owner name.
-- Pet names and species.
-- Task descriptions.
-- Due dates and times.
-- Task durations.
-- Task priorities.
-- Recurrence frequencies.
-- Completion status.
-
-Data is stored locally in:
+**Observed output:**
 
 ```text
-pawpal_data.json
+VALIDATION: (False, 'Overlapping tasks: Medication and Insulin injection')
 ```
 
-The application loads saved information when a new session starts and saves updates when pets or tasks are added or completed.
+**Result:** Both original protected times were preserved. Python detected the overlap and blocked AI explanation.
 
-### Backward Compatibility
+## 6. Model Evaluation and Reliability Findings
 
-Older JSON files may not contain `duration_minutes`.
+### Initial Model Behavior
 
-When loading these records, PawPal+ assigns the default duration of 20 minutes.
+Gemma 3 1B was tested directly on scheduling problems before adding deterministic safeguards.
 
-### Data Privacy
+**Failure 1 — Incorrect Task Durations**
 
-The `.gitignore` file excludes `pawpal_data.json` from Git.
-
-This keeps local application data out of the GitHub repository.
-
-### Persistence Verification
-
-The following behavior was verified:
-
-- A pet was saved to JSON.
-- The Streamlit application was restarted.
-- The saved pet reappeared.
-- Task data was saved successfully.
-- The saved Feeding task contained `"duration_minutes": 30`.
-- The saved Medication task contained `"duration_minutes": 20`.
-- Git confirmed that `pawpal_data.json` was ignored.
-
-## Streamlit User Interface
-
-The Streamlit application supports:
-
-1. Entering owner information.
-2. Adding and managing pets.
-3. Adding care tasks with dates, times, durations, frequencies, and priorities.
-4. Generating schedules.
-5. Sorting schedules by time or priority.
-6. Filtering tasks by pet or completion status.
-7. Displaying overlapping-task warnings.
-8. Marking tasks complete and handling recurrence.
-9. Saving and loading data automatically.
-
-The original CodePath Streamlit layout was preserved while the scheduling backend was integrated.
-
-## 📸 Demo Walkthrough
-
-1. Launch the application:
-
-   ```powershell
-   python -m streamlit run app.py
-   ```
-
-2. Enter the owner's name and add pets.
-
-3. Add tasks with descriptions, due dates, times, durations, priorities, and recurrence frequencies.
-
-4. Select sorting by Time or Priority.
-
-5. Optionally filter the schedule by pet or completion status.
-
-6. Click **Generate schedule**.
-
-7. Review the schedule and any conflict warnings.
-
-8. Select a pending task and click **Mark Complete**. Daily or weekly tasks can generate their next occurrence.
-
-### Verified Browser Demonstration
-
-The duration-aware conflict detection was tested in the Streamlit browser.
-
-The following tasks were created for the pet `PersistenceTest`:
-
-| Task | Start | Duration | End |
-|---|---|---|---|
-| Feeding | 10:00 AM | 30 minutes | 10:30 AM |
-| Medication | 10:15 AM | 20 minutes | 10:35 AM |
-
-The application correctly reported a scheduling conflict.
-
-The browser also displayed four scheduled tasks and three detected conflict pairs because additional tasks were present in the saved schedule.
-
-The corresponding task durations were confirmed in `pawpal_data.json`.
-
-**Screenshot or video (optional):** Browser verification was performed; screenshots are not embedded in this README.
-
-## AI Collaboration and Stretch Features
-
-### GitHub Copilot Agent Workflow (SF7)
-
-GitHub Copilot Agent was used in VS Code to autonomously implement duration-aware conflict detection.
-
-The agent inspected the project, updated six files, added tests, and verified the changes.
-
-Its automated verification reported:
-
-- 11 passing pytest tests.
-- Successful Python compilation.
-- Successful `git diff --check`.
-
-The updated behavior was subsequently verified manually in Streamlit.
-
-### Prompt Comparison (SF11)
-
-Two prompts were tested in separate GitHub Copilot Ask-mode conversations.
-
-- **Option A:** A broad request for conflict-detection improvements.
-- **Option B:** A detailed request specifying the source files, required behavior, number of recommendations, and pytest tests.
-
-Option A generated six broader suggestions.
-
-Option B generated three focused recommendations, each with a proposed solution and test.
-
-The comparison showed that broad prompts help with brainstorming, while specific prompts produce more targeted, testable recommendations.
-
-The complete agent workflow and prompt comparison are documented in:
+For two 20-minute tasks scheduled at 8:00 AM, Gemma proposed:
 
 ```text
-ai_interactions.md
+7:40 AM - 7:50 AM: Dog's Walk (20 minutes)
+7:50 AM - 8:00 AM: Feeding (20 minutes)
 ```
 
-### Additional Enhancements
+The intervals were only 10 minutes each, contradicting the stated durations.
 
-The project also includes:
+**Failure 2 — Incorrect Sequential Scheduling**
 
-- Priority-based task scheduling.
-- JSON persistence.
-- Duration-aware conflict detection.
-- An integrated Streamlit interface.
-- Automated tests for important scheduling behaviors.
+When explicitly instructed to schedule two 20-minute tasks sequentially without overlap or shortening, Gemma proposed:
 
-## Project Files
+```text
+8:00 AM - 8:20 AM: Task 1
+8:20 AM - 8:22 AM: Task 2
+```
+
+The second task was shortened to two minutes.
+
+**Failure 3 — Invented Activities**
+
+For a schedule containing only one walk, Gemma described additional activities and claimed the tasks gradually increased in duration.
+
+In a separate empty-schedule test, Gemma invented veterinary appointments and examinations.
+
+**Failure 4 — Unsupported Priority Claim**
+
+During the Streamlit demonstration, Gemma described an evening walk as the "most important" task, although the scheduling algorithm had not established that ranking.
+
+### Engineering Response
+
+These observations motivated the following changes:
+
+- Python calculates task intervals instead of relying on LLM arithmetic.
+- Python validates durations and overlapping intervals.
+- Protected tasks cannot be moved automatically.
+- Invalid or empty schedules block AI explanations.
+- Gemma receives a validated schedule rather than being asked to construct one.
+- A basic phrase filter rejects several observed unsupported claims.
+- AI explanations are clearly labeled advisory.
+
+### Remaining Limitations
+
+The phrase filter is **not a comprehensive hallucination detector**. Gemma may still introduce unsupported statements that do not match the filtered phrases.
+
+Additional limitations include:
+
+- Protected tasks are identified using description keywords.
+- The scheduler does not understand clinical urgency or veterinary requirements.
+- A valid schedule may still be impractical for the owner.
+- The current scheduler does not optimize travel, owner availability, or task priority.
+- Protected-task conflicts require human intervention.
+- Ollama must be available to generate AI explanations.
+- Proposed schedules are not automatically saved.
+
+Further model risks, intended uses, and evaluation findings are documented in `model_card.md`.
+
+## 7. Testing
+
+The project uses pytest for automated verification.
+
+### Original Module 2 Tests
+
+**11 tests** cover core PawPal+ functionality, including scheduling, filtering, recurrence, storage, and conflict detection.
+
+### Final Project AI Reliability Tests
+
+**6 additional tests** cover:
+
+1. Rescheduling overlapping walks.
+2. Preserving task durations.
+3. Protecting medication times.
+4. Rejecting overlapping medication tasks.
+5. Rejecting empty schedules.
+6. Rejecting incorrectly shortened task intervals.
+
+### Verified Test Output
+
+```text
+.................                 [100%]
+17 passed in 0.08s
+```
+
+These tests verify deterministic scheduling behavior. They do not constitute a comprehensive evaluation of Gemma's natural-language explanations.
+
+## 8. Safety and Privacy
+
+- Medication and other keyword-identified protected tasks retain their original times.
+- Conflicting schedules block AI explanations.
+- The application does not provide veterinary medical advice.
+- The proposed schedule is not automatically written over the owner's saved schedule.
+- Gemma runs locally through Ollama rather than requiring a cloud LLM API.
+- Pet and task information is stored locally in JSON.
+- The local data file `pawpal_data.json` is excluded from Git through `.gitignore`.
+
+Local execution does not by itself guarantee complete privacy or security. Users should still protect their devices and stored data.
+
+## 9. AI Collaboration and Development Decisions
+
+AI tools assisted with code development, troubleshooting, tests, and documentation.
+
+### Accepted Recommendation
+
+Use deterministic Python scheduling and validation before asking the language model to explain results.
+
+**Reason:** Direct Gemma tests demonstrated incorrect duration arithmetic and invented details.
+
+### Revised Recommendation
+
+An initial scheduler moved overlapping flexible tasks without adequately protecting medication intervals.
+
+**Revision:** Protected intervals are now reserved first, and flexible tasks are moved around them. Protected conflicts remain subject to human review.
+
+### Additional AI Collaboration
+
+The original Module 2 project also documented GitHub Copilot Agent development and a comparison of broad versus specific prompts.
+
+See `ai_interactions.md` for that earlier collaboration record.
+
+All generated code and explanations require developer verification; AI suggestions are not assumed correct.
+
+## 10. Project Files
 
 | File | Purpose |
 |---|---|
-| `pawpal_system.py` | Core classes and scheduling algorithms. |
-| `app.py` | Streamlit user interface. |
-| `storage.py` | JSON saving and loading. |
-| `main.py` | Command-line demonstration. |
-| `tests/test_pawpal.py` | Automated pytest tests. |
-| `diagrams/uml_draft.mmd` | Initial UML design. |
-| `diagrams/uml_final.mmd` | Final UML design. |
-| `diagrams/uml.mmd` | Additional UML diagram. |
-| `README.md` | Project overview and instructions. |
-| `reflection.md` | Design decisions, tradeoffs, and reflection. |
-| `ai_interactions.md` | AI agent workflow and prompt comparison. |
-| `requirements.txt` | Python dependencies. |
-| `.gitignore` | Excludes local and generated files. |
+| `app.py` | Streamlit application and AI advisor interface |
+| `pawpal_system.py` | Owner, Pet, Task, and Scheduler classes |
+| `ai_advisor.py` | Scheduling safeguards, validation, and Ollama integration |
+| `storage.py` | Local JSON persistence |
+| `main.py` | Original command-line demonstration |
+| `test_ai_advisor.py` | Six AI reliability tests |
+| `tests/test_pawpal.py` | Eleven original tests |
+| `diagrams/architecture.mmd` | Applied AI architecture diagram |
+| `diagrams/uml_draft.mmd` | Original draft UML |
+| `diagrams/uml_final.mmd` | Original final UML |
+| `diagrams/uml.mmd` | Additional UML diagram |
+| `model_card.md` | Model capabilities, evaluation, and limitations |
+| `ai_interactions.md` | Earlier AI collaboration documentation |
+| `reflection.md` | Project reflection |
+| `requirements.txt` | Python dependencies |
+| `.gitignore` | Git exclusions |
 
-## Project Status
+## 11. Demonstration Guide
 
-The project implementation and stretch-feature documentation were committed and pushed to GitHub.
+A 5–7 minute presentation can demonstrate:
 
-**Latest verified commit:** `64161da`
+1. The original PawPal+ features and project motivation.
+2. Adding a pet and care tasks in Streamlit.
+3. Running the AI Scheduling Advisor.
+4. Viewing a validated schedule and Gemma explanation.
+5. Demonstrating overlapping tasks and protected medication handling.
+6. Showing the 17 passing tests.
+7. Explaining Gemma's observed errors, the safeguards, and remaining limitations.
 
-**Repository:**
+## 12. Project Status
 
-https://github.com/bhanujain2008-hub/ai110-module2show-pawpal-starter
+**GitHub repository:**  
+https://github.com/bhanujain2008-hub/pawpal-applied-ai-final
 
-**Final verified automated test result:** 11 passed in 0.18 seconds.
+**Verified AI implementation commit:** `5cb7ef7`
 
-The project includes the completed core scheduling system, Streamlit integration, UML diagrams, JSON persistence, duration-aware conflict detection, AI collaboration documentation, and automated tests.
+**Latest verified automated test result:** 17 passed.
 
-Final grading and stretch-feature credit are determined by CodePath.
+The AI advisor has been implemented, tested locally, and pushed to GitHub. Final documentation and submission preparation are being completed.
 
-````
-
-Next step: Save this as `README.md` in VS Code. We should then update `reflection.md` to remove outdated references to the old conflict-detection algorithm before the final commit.
+Final grading is determined by CodePath.

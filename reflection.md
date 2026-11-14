@@ -247,3 +247,80 @@ The project reinforced several important lessons:
 - Review and verify autonomous AI agent changes before committing them.
 
 The most valuable lesson was that **AI-assisted development works best when clear requirements, careful human judgment, and systematic testing are combined**.
+
+
+---
+
+## 6. AI110 Final Project 4 — Applied AI Extension
+
+### a. Project Evolution
+
+I extended my original Module 2 PawPal+ application by integrating an AI Scheduling Advisor powered by Google's Gemma 3 1B model through Ollama.
+
+I preserved the original four-class architecture, Streamlit interface, JSON persistence, scheduling functions, and automated tests.
+
+The new advisor proposes schedules for pending tasks, validates their timing, protects medication-related tasks, and uses Gemma to explain validated schedules.
+
+Unlike the original scheduler, which detects conflicts without changing task times, the new advisor proposes alternative times for flexible tasks. These proposals do not automatically overwrite saved tasks.
+
+### b. Model Selection and Evaluation
+
+I selected Gemma 3 1B because it can run locally through Ollama without requiring a cloud API.
+
+Before integrating the model, I tested its ability to reason about scheduling constraints.
+
+I discovered several important limitations:
+
+- Gemma assigned only 10 minutes to tasks that required 20 minutes.
+- Even with explicit instructions, it shortened a 20-minute task to two minutes.
+- It invented activities and veterinary examinations that were absent from the input.
+- It claimed that an evening walk was the most important task without sufficient justification.
+
+These failures demonstrated that an LLM should not be trusted to calculate scheduling intervals independently.
+
+### c. Engineering Decisions and AI Collaboration
+
+**Accepted AI suggestion:** Separate deterministic scheduling from natural-language explanations. Python calculates and validates the schedule, while Gemma explains it.
+
+**Revised AI suggestion:** The initial scheduling implementation did not adequately protect medication times. I revised the algorithm to reserve protected intervals before moving flexible tasks.
+
+I also added validation for task durations, overlapping intervals, and empty schedules.
+
+A basic phrase-based safeguard was introduced after Gemma generated unsupported claims. However, this safeguard is not a comprehensive hallucination detector.
+
+### d. Testing and Verification
+
+The original Module 2 project contained 11 passing tests.
+
+Final Project 4 added six tests covering:
+
+- Rescheduling overlapping flexible tasks.
+- Preserving task durations.
+- Protecting medication times.
+- Rejecting conflicting protected tasks.
+- Rejecting empty schedules.
+- Detecting incorrect task durations.
+
+**Latest verified result: 17 tests passed.**
+
+I also verified the integrated Streamlit application and observed Gemma's explanations in the browser.
+
+These tests establish confidence in the tested Python scheduling safeguards, but they do not prove that every AI explanation will be accurate.
+
+### e. Remaining Limitations
+
+The system does not understand veterinary medical requirements, owner availability, travel time, or all practical constraints.
+
+Protected tasks are identified using keywords, which may miss unusual descriptions.
+
+Gemma may still generate unsupported explanations that bypass the phrase filter.
+
+Future improvements should include structured model outputs, stronger explanation validation, additional automated model tests, and owner-configurable scheduling constraints.
+
+### f. Final Takeaway
+
+The most important lesson from Final Project 4 was that **integrating AI successfully requires more than obtaining a plausible model response**.
+
+I learned to test the model against explicit constraints, identify its failures, revise the architecture accordingly, and use deterministic validation to protect critical application behavior.
+
+The resulting system combines the strengths of conventional software engineering with the flexibility of AI-generated explanations while acknowledging the limitations of both.

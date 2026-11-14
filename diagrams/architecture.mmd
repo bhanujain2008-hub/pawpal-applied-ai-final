@@ -1,0 +1,21 @@
+
+flowchart TD
+    A["Pet Owner"] --> B["Streamlit Interface (app.py)"]
+    B --> C["Pet and Task Data (pawpal_system.py)"]
+    C <--> D["JSON Storage (storage.py)"]
+
+    B --> E["AI Scheduling Advisor (ai_advisor.py)"]
+    E --> F["Python Scheduler"]
+    F --> G["Protected Task Checks"]
+    G --> H["Schedule Validation"]
+
+    H -->|Valid| I["Ollama Local API"]
+    I --> J["Google Gemma 3 1B"]
+    J --> K["AI Explanation Safeguard"]
+    K --> B
+
+    H -->|Invalid| L["Block AI Explanation"]
+    L --> B
+
+    M["Pytest Reliability Tests"] -.-> E
+    M -.-> H
